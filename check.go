@@ -6,6 +6,7 @@ import (
 	_ "crypto/sha256"
 	"crypto/tls"
 	"crypto/x509" // used in requesting OCSP response
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"flag"
@@ -144,15 +145,23 @@ func main() {
 	}
 
 	opts := ocsp.RequestOptions{
-		Hash: crypto.SHA256,
+		Hash: crypto.SHA1,
 	}
 	ocspRequest, err := ocsp.CreateRequest(cert, issuer, &opts)
 	checkError(err)
 
 	for _, server := range ocspURLs {
 		fmt.Println("sending OCSP request to", server)
-		buf := bytes.NewBuffer(ocspRequest)
-		resp, err := http.Post(server, "application/ocsp-request", buf)
+
+		var resp *http.Response
+		if len(ocspRequest) > 256 {
+			buf := bytes.NewBuffer(ocspRequest)
+			resp, err = http.Post(server, "application/ocsp-request", buf)
+		} else {
+			reqURL := server + "/" + base64.StdEncoding.EncodeToString(ocspRequest)
+			resp, err = http.Get(reqURL)
+		}
+
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[!] %v\n", err)
 			continue
