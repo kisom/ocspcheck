@@ -16,7 +16,7 @@ import (
 	"os"
 	"regexp"
 
-	"code.google.com/p/go.crypto/ocsp"
+	"golang.org/x/crypto/ocsp"
 )
 
 var ocspUnauthorised = []byte{0x30, 0x03, 0x0a, 0x01, 0x06}
